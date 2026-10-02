@@ -4,6 +4,13 @@
 
 set -euo pipefail
 
+# do-not-merge: NIXL 1.5.0rc1 RC validation (CUDA only).
+if python3 -c "import torch; raise SystemExit(torch.version.cuda is None)"; then
+    uv pip install --system --no-deps --prerelease allow \
+        --index-url https://test.pypi.org/simple/ \
+        "nixl==1.5.0rc1" "nixl-cu12==1.5.0rc1" "nixl-cu13==1.5.0rc1"
+fi
+
 if python3 -c "import torch; raise SystemExit(0 if torch.version.hip is not None else 1)"; then
     uv pip install --system -r /vllm-workspace/requirements/kv_connectors_rocm.txt
     exit 0
@@ -47,7 +54,7 @@ MOONCAKE_VERSION="${MOONCAKE_VERSION:-}"
 # nixl>=1.1.0 can install multiple CUDA wheel variants. Keep only the variant
 # matching this CI image so nixl_ep_cpp links against the available libcudart.
 uv pip uninstall --system nixl-cu12 nixl-cu13 2>/dev/null || true
-uv pip install --system --no-deps "nixl-cu${CUDA_MAJOR}==${NIXL_VERSION}"
+uv pip install --system --no-deps "nixl-cu${CUDA_MAJOR}==${NIXL_VERSION}" --prerelease allow --index-url https://test.pypi.org/simple/
 
 python3 - <<'PY'
 import importlib.metadata as metadata
